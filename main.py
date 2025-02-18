@@ -26,24 +26,14 @@ async def upload_and_process_pdf(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Extract text with PyMuPDF
+    # Extract HTML with PyMuPDF
     doc = fitz.open(file_path)
-    extracted_data = []
+    html_content = ""
 
     for page_num, page in enumerate(doc):
-        page_data = {"page": page_num + 1, "content": []}
+        # Extract HTML for each page
+        html_page = page.get_text("html")
+        html_content += html_page  # Accumulate the HTML from all pages
 
-        for text_block in page.get_text("dict")["blocks"]:
-            if "lines" in text_block:
-                for line in text_block["lines"]:
-                    for span in line["spans"]:
-                        page_data["content"].append({
-                            "text": span["text"],
-                            "font_size": span["size"],
-                            "bold": bool(span["flags"] & 2)
-                        })
-
-        extracted_data.append(page_data)
-
-    # Return both filename and processed data
-    return {"filename": file.filename, "pages": extracted_data}
+    # Return HTML content as response
+    return {"html": html_content}
